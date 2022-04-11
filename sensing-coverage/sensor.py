@@ -1,10 +1,29 @@
 class Sensor:
-    '''
-    sens_frequency and sens_offset are in time unit which is one tick - it may be second/hours or sth like this
-    x, y, sensing_range, max_sensing_range are in length units e.g. meters
-    '''
+    """
+    A class which represents single sensor.
 
-    def __init__(self, id, x, y, sensing_range=0, max_sensing_range=5, check_range = 3, sens_frequency=30, sens_offset=0):
+    Attributes
+    ----------
+    id: number
+        identity of given sensor - must be unique
+    x: number
+        x position on sensing environment map (related to env width)
+    y: number
+        y position on sensing environment map (related to env length)
+    sensing_range: number
+        current range in which sensor is covering area - we assume that higher sensing_range higher battery consumption
+        is
+    max_sensing_range: number
+        this value limits sensing_range
+    check_range: number
+        range in which sensor can check whether other sensors are covering area around him
+    sens_frequency: number
+        it says how often sensing occurs in some abstract time unit (e.g. seconds)
+    sens_offset: number
+        it says how much time after sensor started first sensing occurs (e.g. 10 seconds after start)
+    """
+
+    def __init__(self, id, x, y, sensing_range=0, max_sensing_range=5, check_range=3, sens_frequency=30, sens_offset=0):
         self.id = id
         self.x = x
         self.y = y
