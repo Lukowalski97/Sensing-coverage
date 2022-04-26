@@ -28,7 +28,10 @@ class Sensor:
         self.x = x
         self.y = y
         self.max_sensing_range = max_sensing_range
-        self.sensing_range = sensing_range
+        if sensing_range > max_sensing_range:
+            self.sensing_range = max_sensing_range
+        else:
+            self.sensing_range = sensing_range
         self.sens_frequency = sens_frequency
         self.sens_offset = sens_offset
         self.check_range = check_range

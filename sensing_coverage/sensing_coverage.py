@@ -10,6 +10,7 @@ from pettingzoo.utils import ParallelEnv
 # )
 from sensing_coverage.sensing_render import SensingEnvRender
 
+encode_multiplier = 10
 
 class SensingCoverageParallel(ParallelEnv):
     def __init__(self, env, max_sensing_range=5, max_freq=50, max_offset=50):
@@ -52,7 +53,7 @@ class SensingCoverageParallel(ParallelEnv):
                 }
             }
 
-            rewards[sensor_id] = all_coverage  # shouldn't we use more complex formula using e.g. sensing range?
+            rewards[sensor_id] = all_coverage - (sensor.sensing_range/sensor.max_sensing_range/10) # shouldn't we use more complex formula using e.g. sensing range?
             dones[sensor_id] = False
             infos[sensor_id] = None
             observations[sensor_id] = observation
@@ -77,6 +78,29 @@ class SensingCoverageParallel(ParallelEnv):
                 }
             )}
         )
+
+    def encode_state(self, self_cov, other_cov, glob_cov, sens_range):
+        self_cov_part = self_cov * encode_multiplier * encode_multiplier * self.max_sensing_range
+        other_cov_part = other_cov * encode_multiplier * self.max_sensing_range
+        glob_cov_part = glob_cov * self.max_sensing_range
+        return self_cov_part + other_cov_part + glob_cov_part + sens_range
+
+    def decode_state(self, state):
+        self_cov = state // (encode_multiplier * encode_multiplier * self.max_sensing_range)
+        state -= (self_cov * encode_multiplier * encode_multiplier * self.max_sensing_range)
+
+        other_cov = state // (encode_multiplier * self.max_sensing_range)
+        state -= (other_cov * encode_multiplier * self.max_sensing_range)
+
+        glob_cov = state // self.max_sensing_range
+        sens_range = state % self.max_sensing_range
+
+        assert 0 <= sens_range < self.max_sensing_range
+        assert 0 <= glob_cov < encode_multiplier
+        assert 0 <= other_cov < encode_multiplier
+        assert 0 <= self_cov < encode_multiplier
+        return self_cov, other_cov, glob_cov, sens_range
+
 
     def action_space(self, agent):
         return spaces.MultiDiscrete([self.max_sensing_range * 2, self.max_freq * 2, self.max_offset * 2])
