@@ -105,25 +105,26 @@ class SensingEnvironment:
         Next we calculate avreage_gap by dividing sum of gaps and their amount. At last we iterate over each gap
         and to calculate standard deviation where average is average_gap and x_i is measured gap.
         """
-        sensors_measures = np.full(self.jitter_time_max, False)
+        # todo -
+        sensors_measures_occurences = set()  # we don't need duplicates
         for sensor_id, sensor in self.get_sensors():
             tmp_measure = sensor.sens_offset
             while tmp_measure < self.jitter_time_max:
-                sensors_measures[tmp_measure] = True
+                sensors_measures_occurences.add(tmp_measure)
                 tmp_measure += sensor.sens_frequency
+        sensors_measures_occurences = list(sensors_measures_occurences)
+        sensors_measures_occurences.sort()
 
-        last_ind_measured = -1
+        prev_measure_occurrence = sensors_measures_occurences[0]
         gaps_amount = 0
         measures_gap_sum = 0
         measures_gaps = []
-        for ind, measured in enumerate(sensors_measures):
-            if measured:
-                if last_ind_measured > -1:
-                    gaps_amount += 1
-                    gap = ind - last_ind_measured
-                    measures_gap_sum += gap
-                    measures_gaps.append(gap)
-                last_ind_measured = ind
+        for measure_occurrence in sensors_measures_occurences[1:]:
+            gaps_amount += 1
+            gap = measure_occurrence - prev_measure_occurrence
+            measures_gap_sum += gap
+            measures_gaps.append(gap)
+            prev_measure_occurrence = measure_occurrence
 
         average_gap = measures_gap_sum / gaps_amount
         variance = 0

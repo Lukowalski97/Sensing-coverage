@@ -8,6 +8,8 @@ cover_color = Color(0, 0, 255)
 bg_color = Color(255, 255, 255)
 scale = 20
 
+#TODO check range with different color,
+#TODO mode for human with nice circles, and accurate mode with pixels only
 
 class SensingEnvRender():
     def __init__(self, env):

@@ -1,7 +1,6 @@
 import gym.spaces as spaces
 from pettingzoo.utils import ParallelEnv
 
-from sensing_render import SensingEnvRender
 
 
 # actions are: sens (range diff, freq diff, offset diff) - tuple of 3 ints
@@ -9,6 +8,8 @@ from sensing_render import SensingEnvRender
 # global: (all_coverage: float 0-1, freq_all, jitter),
 # local: (agent_coverage: float 0-1, other_agents_his_area_coverage: float 0-1, agent_freq, agent_offset)
 # )
+from sensing_coverage.sensing_render import SensingEnvRender
+
 
 class SensingCoverageParallel(ParallelEnv):
     def __init__(self, env, max_sensing_range=5, max_freq=50, max_offset=50):
@@ -85,3 +86,5 @@ class SensingCoverageParallel(ParallelEnv):
         for sensor_id, sensor in self.env.get_sensors():
             sum_freq += sensor.sens_frequency
         return sum_freq
+
+
