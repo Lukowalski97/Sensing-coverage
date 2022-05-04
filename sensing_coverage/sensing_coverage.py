@@ -20,10 +20,14 @@ class SensingCoverageParallel(ParallelEnv):
         self.max_offset = max_offset
         self.render_env = SensingEnvRender(env)
 
-    def render(self, mode="human"):
-        if mode == "human":
-            self.render_env.render()
-        # TODO make accurate mode
+    def render(self, mode="accurate"):
+        if mode == "accurate":
+            self.render_env.render_accurate()
+        else:
+            self.render_env.render_human()
+
+    def get_render_env(self):
+        return self.render_env
 
     def step(self, actions):
         for sensor_id, actions in actions.items():
@@ -53,7 +57,8 @@ class SensingCoverageParallel(ParallelEnv):
                 }
             }
 
-            rewards[sensor_id] = all_coverage - (sensor.sensing_range/sensor.max_sensing_range/10) # shouldn't we use more complex formula using e.g. sensing range?
+
+            rewards[sensor_id] = (all_coverage - 0.5) *2 # shouldn't we use more complex formula using e.g. sensing range?
             dones[sensor_id] = False
             infos[sensor_id] = None
             observations[sensor_id] = observation
@@ -101,6 +106,8 @@ class SensingCoverageParallel(ParallelEnv):
         assert 0 <= self_cov < encode_multiplier
         return self_cov, other_cov, glob_cov, sens_range
 
+    def states_amount(self):
+        return encode_multiplier * encode_multiplier * encode_multiplier * self.max_sensing_range
 
     def action_space(self, agent):
         return spaces.MultiDiscrete([self.max_sensing_range * 2, self.max_freq * 2, self.max_offset * 2])

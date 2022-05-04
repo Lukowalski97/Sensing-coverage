@@ -3,7 +3,6 @@ import numpy as np
 
 class QLearningAgent:
     def __init__(self, states_n, actions_n, learning_rate, epsilon, discount_rate):
-        self.__states_n = states_n
         self.__actions_n = actions_n
         self.__learning_rate = learning_rate
         self.__epsilon = epsilon
@@ -22,10 +21,10 @@ class QLearningAgent:
     def select_random_action(self):
         return np.random.randint(0, self.__actions_n)
 
-    def update(self, reward, old_state, action, new_state=None):
-        if new_state is None:
-            new_state = old_state
-        current_value = self.__q_matrix[old_state][action]
-        q_prim = self.__discount_rate * np.max(self.__q_matrix[new_state])
-        self.__q_matrix[old_state][action] = current_value + self.__learning_rate * (reward - current_value + q_prim)
+    def update(self, reward, new_state, action, old_state=None):
+        if old_state is None:
+            old_state = new_state
+        current_value = self.__q_matrix[new_state][action]
+        q_prim = self.__discount_rate * np.max(self.__q_matrix[old_state])
+        self.__q_matrix[new_state][action] = current_value + self.__learning_rate * (reward - current_value + q_prim)
 

@@ -2,6 +2,8 @@ import math
 
 import numpy as np
 
+from sensing_coverage.sensing_render import SensingEnvRender
+
 
 class SensingEnvironment:
     """
@@ -21,11 +23,20 @@ class SensingEnvironment:
         consideration when creating a list of sensing measurements of each sensor
     """
 
-    def __init__(self, sensors, width=5, length=5, jitter_time_max=10000):
+    def __init__(self, sensors, width=5, length=5, jitter_time_max=10000, debug=False):
         self.width = width
         self.length = length
         self.sensors = sensors
         self.jitter_time_max = jitter_time_max
+        self.debug = debug
+        self.render_env = SensingEnvRender(self)
+
+
+    def set_debug(self, debug):
+        self.debug=debug
+
+    def has_debug(self):
+        return self.debug
 
     def get_area(self):
         return self.width * self.length
@@ -45,15 +56,30 @@ class SensingEnvironment:
     def remove_sensor(self, sensor):
         self.sensors.pop(sensor.id)
 
+    def get_operational_for_sensor_area(self, sensor):
+        return self.__get_sensing_area(sensor, sensor.operational_range)
+
     def get_coverage_for_sensor_area(self, sensor):
         """
         :returns 2D bool array where True means positions covered by sensor of given sensor_id
         """
-        sensing_range = sensor.sensing_range
+        return self.__get_sensing_area(sensor, sensor.sensing_range)
+
+
+    def __get_sensing_area(self, sensor, range):
         (xx, yy) = np.ogrid[:self.width, :self.length]
         dist_from_center = np.sqrt((xx - sensor.x) ** 2 + (yy - sensor.y) ** 2)
-        covered_area = dist_from_center <= sensing_range
+        covered_area = dist_from_center <= range
+        if self.debug:
+            print(f'get_coverage_for_sensor_area: sensor:{sensor.details()}')
+            self.render_env.draw_map(covered_area)
         return covered_area
+
+    def get_coverage_for_sensor_operational_range_area(self, sensor):
+        """
+        :returns 2D bool array where True means positions covered by any sensor in operational_range of given sensor
+        """
+        return self.__check_coverage_in_operational_area(sensor, include_sensor=True)
 
     def get_sensing_coverage_area(self):
         """
@@ -61,40 +87,59 @@ class SensingEnvironment:
         """
         return self.get_coverage_excluding_sensor_area()
 
-    def get_coverage_excluding_sensor_area(self, sensor=None):
+    def get_coverage_excluding_sensor_area(self, sensor_to_skip=None):
         """
         :return: 2D bool array where True means all map position covered by all sensors excluding sensor which is
         served as parameter
         """
-        sensor_id = None
-        if sensor is not None:
-            sensor_id = sensor.id
+        sensor_to_skip_id = None
+        if sensor_to_skip is not None:
+            sensor_to_skip_id = sensor_to_skip.id
 
         covered_area = np.full((self.width, self.length), False)
         for sensor in self.sensors.values():
-            if sensor.id != sensor_id:
+            if sensor.id != sensor_to_skip_id:
                 area = self.get_coverage_for_sensor_area(sensor)
-                for ind_y, row in enumerate(area):
-                    for ind_x, x in enumerate(row):
-                        if x and area[ind_y, ind_x]:
+                for ind_x, row in enumerate(area):
+                    for ind_y, y in enumerate(row):
+                        if y:
                             covered_area[(ind_x, ind_y)] = True
+        if self.debug:
+            if sensor_to_skip is not None:
+                print(f'get_coverage_excluding_sensor: sensor:{sensor_to_skip.details()}')
+            else:
+                print('get_coverage_excluding_sensor')
+            self.render_env.draw_map(covered_area)
         return covered_area
+
+
+    def __check_coverage_in_operational_area(self, sensor, include_sensor):
+        operational_range = sensor.operational_range
+        (xx, yy) = np.ogrid[:self.width, :self.length]
+        dist_from_center = np.sqrt((xx - sensor.x) ** 2 + (yy - sensor.y) ** 2)
+        operational_area = dist_from_center <= operational_range
+
+        result = np.full((self.width, self.length), False)
+        if include_sensor:
+            sensor_to_skip = None
+        else:
+            sensor_to_skip = sensor
+        for ind_x, row in enumerate(self.get_coverage_excluding_sensor_area(sensor_to_skip)):
+            for ind_y, y in enumerate(row):
+                if y and operational_area[ind_x, ind_y]:
+                    result[ind_x, ind_y] = True
+        if self.debug:
+            print(f'__check_coverage_in_operational_area: sensor:{sensor.details()}, include_sensor:{include_sensor}')
+            self.render_env.draw_map(result)
+        return result
 
     def __check_coverage_by_other_sensors_area(self, sensor):
         """
-        :return: 2d bool array where True means position covered by other sensors limited to check_range of given sensor
+        :return: 2d bool array where True means position covered by other sensors limited to operational_range
+         of given sensor
         """
-        check_range = sensor.check_range
-        (xx, yy) = np.ogrid[:self.width, :self.length]
-        dist_from_center = np.sqrt((xx - sensor.x) ** 2 + (yy - sensor.y) ** 2)
-        covered_area = dist_from_center <= check_range
+        return self.__check_coverage_in_operational_area(sensor, include_sensor=False)
 
-        result = np.full((self.width, self.length), False)
-        for ind_y, row in enumerate(self.get_coverage_excluding_sensor_area(sensor)):
-            for ind_x, x in enumerate(row):
-                if x and covered_area[ind_y, ind_x]:
-                    result[ind_x, ind_y] = True
-        return result
 
     def get_jitter(self):
         """
@@ -105,7 +150,6 @@ class SensingEnvironment:
         Next we calculate avreage_gap by dividing sum of gaps and their amount. At last we iterate over each gap
         and to calculate standard deviation where average is average_gap and x_i is measured gap.
         """
-        # todo -
         sensors_measures_occurences = set()  # we don't need duplicates
         for sensor_id, sensor in self.get_sensors():
             tmp_measure = sensor.sens_offset

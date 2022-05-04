@@ -11,7 +11,7 @@ to some maximum value)
 and decreased (up to 0), but increasing range means increased energy consumption. Sensors must cooperate in order to
 cover as much area possible without using too much energy.
 
-Each sensor also has check_range which is used to check if some area around it is already covered by different sensor.
+Each sensor also has operational_range which is used to check if some area around it is already covered by different sensor.
 Sensors also have their sensing frequency (its abstract unit of time e.g. it could be seconds) and sensing offset - how
 many units pass until first sensing occurs.
 
@@ -26,7 +26,7 @@ itself.
 ```python
 # from sensing_coverage import Sensor
 sensor0 = Sensor(id=0, x=4, y=5)
-sensor1 = Sensor(id=1, x=0, y=0, sensing_range=4, max_sensing_range=10, check_range=4,sens_frequency=20, sens_offset=5)
+sensor1 = Sensor(id=1, x=0, y=0, sensing_range=4, max_sensing_range=10, operational_range=4,sens_frequency=20, sens_offset=5)
 ```
 
 Then sensors can be passed into **SensingEnvironment**:
@@ -56,7 +56,7 @@ by given difference. It returns 4 dictionaries: observations, rewards, dones, an
   made up to *jitter_time_max* time units of measurements for each sensor combined
   * For each sensor also local observations are returned:
     * part of covered area by sensor itself (0-1.0)
-    * part of area covered by other sensors within *check_range*
+    * part of area covered by other sensors within *operational_range*
     * sensing frequency of sensor
     * sensing offset of sensor
 
