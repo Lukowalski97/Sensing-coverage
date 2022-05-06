@@ -1,8 +1,6 @@
 import gym.spaces as spaces
 from pettingzoo.utils import ParallelEnv
 
-
-
 # actions are: sens (range diff, freq diff, offset diff) - tuple of 3 ints
 # rewards for each agent are: (
 # global: (all_coverage: float 0-1, freq_all, jitter),
@@ -12,11 +10,13 @@ from sensing_coverage.sensing_render import SensingEnvRender
 
 encode_multiplier = 10
 
+
 class SensingCoverageParallel(ParallelEnv):
-    def __init__(self, env, max_sensing_range=5, max_freq=50, max_offset=50):
+    def __init__(self, env, max_sensing_range=5, max_freq=50, max_offset=50, alpha=0.4):
         self.env = env
         self.max_sensing_range = max_sensing_range
         self.max_freq = max_freq
+        self.alpha = alpha
         self.max_offset = max_offset
         self.render_env = SensingEnvRender(env)
 
@@ -47,18 +47,20 @@ class SensingCoverageParallel(ParallelEnv):
         all_freq = self.__sum_frequencies()
         jitter = self.env.get_jitter()
         for sensor_id, sensor in self.env.get_sensors():
-            sensor_coverage = self.env.get_covered_area_for_sensor(sensor) / area
+            operational_coverage = self.env.get_covered_area_for_sensor_operational_range(
+                sensor) / self.env.get_operational_max_for_sensor(sensor)
             other_coverage = self.env.get_covered_by_other_sensors(sensor) / area
             observation = {
                 'global': {'coverage': all_coverage, 'freq': all_freq, 'jitter': jitter},
                 'local': {
-                    'coverage': sensor_coverage, 'other_coverage': other_coverage,
+                    'coverage': operational_coverage, 'other_coverage': other_coverage,
                     'freq': sensor.sens_frequency, 'offset': sensor.sens_offset,
                 }
             }
-
-
-            rewards[sensor_id] = (all_coverage - 0.5) *2 # shouldn't we use more complex formula using e.g. sensing range?
+            if sensor.sensing_range == 0:
+                rewards[sensor_id] = self.alpha * operational_coverage + (1 - self.alpha)
+            else:
+                rewards[sensor_id] = self.alpha * operational_coverage + (1 - self.alpha) / sensor.sensing_range
             dones[sensor_id] = False
             infos[sensor_id] = None
             observations[sensor_id] = observation
@@ -84,27 +86,9 @@ class SensingCoverageParallel(ParallelEnv):
             )}
         )
 
-    def encode_state(self, self_cov, other_cov, glob_cov, sens_range):
-        self_cov_part = self_cov * encode_multiplier * encode_multiplier * self.max_sensing_range
-        other_cov_part = other_cov * encode_multiplier * self.max_sensing_range
-        glob_cov_part = glob_cov * self.max_sensing_range
-        return self_cov_part + other_cov_part + glob_cov_part + sens_range
-
-    def decode_state(self, state):
-        self_cov = state // (encode_multiplier * encode_multiplier * self.max_sensing_range)
-        state -= (self_cov * encode_multiplier * encode_multiplier * self.max_sensing_range)
-
-        other_cov = state // (encode_multiplier * self.max_sensing_range)
-        state -= (other_cov * encode_multiplier * self.max_sensing_range)
-
-        glob_cov = state // self.max_sensing_range
-        sens_range = state % self.max_sensing_range
-
-        assert 0 <= sens_range < self.max_sensing_range
-        assert 0 <= glob_cov < encode_multiplier
-        assert 0 <= other_cov < encode_multiplier
-        assert 0 <= self_cov < encode_multiplier
-        return self_cov, other_cov, glob_cov, sens_range
+    def encode_state(self, self_cov, sens_range):
+        self_cov_part = self_cov * self.max_sensing_range
+        return self_cov_part + sens_range
 
     def states_amount(self):
         return encode_multiplier * encode_multiplier * encode_multiplier * self.max_sensing_range
@@ -117,5 +101,3 @@ class SensingCoverageParallel(ParallelEnv):
         for sensor_id, sensor in self.env.get_sensors():
             sum_freq += sensor.sens_frequency
         return sum_freq
-
-

@@ -62,6 +62,8 @@ class Sensor:
         new_sensing_range = self.sensing_range + diff
         if 0 <= new_sensing_range <= self.max_sensing_range:
             self.sensing_range = new_sensing_range
+        elif new_sensing_range > self.max_sensing_range:
+            self.sensing_range = self.max_sensing_range
 
     def details(self, advanced=False):
         details = self.__str__() + f' - s_range:{self.sensing_range}, o_range:{self.operational_range}, ' \

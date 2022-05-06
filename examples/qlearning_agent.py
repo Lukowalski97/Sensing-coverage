@@ -24,7 +24,7 @@ class QLearningAgent:
     def update(self, reward, new_state, action, old_state=None):
         if old_state is None:
             old_state = new_state
-        current_value = self.__q_matrix[new_state][action]
-        q_prim = self.__discount_rate * np.max(self.__q_matrix[old_state])
-        self.__q_matrix[new_state][action] = current_value + self.__learning_rate * (reward - current_value + q_prim)
+        current_value = self.__q_matrix[old_state][action]
+        q_prim = self.__discount_rate * np.max(self.__q_matrix[new_state])
+        self.__q_matrix[old_state][action] = current_value + self.__learning_rate * (reward - current_value + q_prim)
 
