@@ -1,24 +1,36 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
-from qlearning_agent import QLearningAgent
+from examples.qlearning_agent import QLearningAgent
 from sensing_coverage.sensing_coverage import SensingCoverageParallel
 from sensing_coverage.sensing_environment import SensingEnvironment
 from sensing_coverage.sensor import Sensor
 
-
+# This version has decyaing epsilon available
 def iql():
     env_alphas = [0, 0.2, 0.4, 0.6, 0.8, 1]
 
     for env_alpha in env_alphas:
         plot_window_size = 250
-        iterations = 30
+        iterations = 45000
+        epsilon_decay_iterations = 10000
+
+        decaying_epsilon_mode = False
+
+        crash_iteration = 15000
+        crash_iteration_mode = True
+        crash_index = 2
+
+        starting_epsilon = 0.1
+        end_epsilon = 0.1
+        epsilon_diff = (starting_epsilon - end_epsilon) / epsilon_decay_iterations
 
         max_sens_range = 6
         cov_multiplier = 5
 
         sensor0 = Sensor(0, 3, 2, sensing_range=1, max_sensing_range=max_sens_range)
         sensor1 = Sensor(1, 9, 7, sensing_range=1, max_sensing_range=max_sens_range)
-        sensor2 = Sensor(2, 4, 9, sensing_range=1, max_sensing_range=max_sens_range)
+        sensor2 = Sensor(2, 4, 6, sensing_range=1, max_sensing_range=max_sens_range)
         sensor3 = Sensor(3, 7, 2, sensing_range=1, max_sensing_range=max_sens_range)
 
         sensors_dict = {0: sensor0, 1: sensor1, 2: sensor2, 3: sensor3}
@@ -28,10 +40,11 @@ def iql():
         states_amount = cov_multiplier * max_sens_range + max_sens_range + 1
         actions_amount = max_sens_range * 2
         q_agent_learn_rate = 0.1
-        q_agent_epsilon = 0.05
         q_agent_discount_rate = 0.7
+
+        global_q_matrix = None  # global_q_matrix = np.random.rand(states_amount, actions_amount)
         q_agents = [
-            QLearningAgent(states_amount, actions_amount, q_agent_learn_rate, q_agent_epsilon, q_agent_discount_rate)
+            QLearningAgent(states_amount, actions_amount, q_agent_learn_rate, starting_epsilon, q_agent_discount_rate, global_q_matrix)
             for _ in range(len(sensors_dict))
         ]
         states = {0: None, 1: None, 2: None, 3: None}
@@ -57,9 +70,9 @@ def iql():
             for ind, q_agent in enumerate(q_agents):
                 action = q_agent.select_action(states[ind])
                 actions[ind] = (action - max_sens_range, 0, 0)
+                if decaying_epsilon_mode and it <= epsilon_decay_iterations:
+                    q_agent.set_epsilon(q_agent.get_epsilon() - epsilon_diff)
             observations, rewards, dones, infos = parallel_env.step(actions)
-
-
 
             for ind, q_agent in enumerate(q_agents):
                 local_coverages[ind].append(observations[ind]['local']['coverage'])
@@ -69,6 +82,9 @@ def iql():
             global_coverages.append(observations[0]['global']['coverage'])
             mean_ranges.append(sum(sensor.sensing_range for sensor in sensors_dict.values())/ len(sensors_dict))
             mean_rewards.append(sum(reward for reward in rewards.values())/ len(sensors_dict))
+
+            if crash_iteration_mode and it == crash_iteration:
+                sensors_dict[crash_index].crash()
 
             if it % plot_window_size == 0:
                 for ind, q_agent in enumerate(q_agents):
@@ -124,7 +140,7 @@ def iql():
         ax_global_rew.set_ylim([0, 1])
 
         fig.tight_layout()
-        plt.savefig(f'out/iqlv1-{int(env_alpha * 10)}')
+        plt.savefig(f'out/iql-{int(env_alpha * 10)}')
 
 
 if __name__ == '__main__':

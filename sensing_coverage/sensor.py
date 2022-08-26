@@ -27,6 +27,7 @@ class Sensor:
     def __init__(self, id, x, y, sensing_range=0, max_sensing_range=5, operational_range=6, sens_frequency=30,
                  sens_offset=0):
         assert operational_range >= max_sensing_range
+        self.crashed = False
         self.id = id
         self.x = x
         self.y = y
@@ -50,19 +51,19 @@ class Sensor:
 
     def adjust__frequency(self, diff):
         new_freq = self.sens_frequency + diff
-        if 0 <= new_freq:
+        if not self.crashed and 0 <= new_freq:
             self.sens_frequency = new_freq
 
     def adjust__offset(self, diff):
         new_offset = self.sens_offset + diff
-        if 0 <= new_offset:
+        if not self.crashed and 0 <= new_offset:
             self.sens_offset = new_offset
 
     def adjust_sensing_range(self, diff):
         new_sensing_range = self.sensing_range + diff
-        if 0 <= new_sensing_range <= self.max_sensing_range:
+        if not self.crashed and 0 <= new_sensing_range <= self.max_sensing_range:
             self.sensing_range = new_sensing_range
-        elif new_sensing_range > self.max_sensing_range:
+        elif not self.crashed and new_sensing_range > self.max_sensing_range:
             self.sensing_range = self.max_sensing_range
 
     def details(self, advanced=False):
@@ -72,3 +73,8 @@ class Sensor:
             return details + f' - off:{self.sens_offset},freq:{self.sens_frequency}'
         else:
             return details
+
+    def crash(self):
+        self.sensing_range = 0
+        self.operational_range = 0
+        self.crashed = True

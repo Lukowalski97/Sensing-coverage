@@ -57,7 +57,9 @@ class SensingCoverageParallel(ParallelEnv):
                     'freq': sensor.sens_frequency, 'offset': sensor.sens_offset,
                 }
             }
-            if sensor.sensing_range == 0:
+            if sensor.crashed:
+                rewards[sensor_id] = 0
+            elif sensor.sensing_range == 0:
                 rewards[sensor_id] = self.alpha * operational_coverage + (1 - self.alpha)
             else:
                 rewards[sensor_id] = self.alpha * operational_coverage + (1 - self.alpha) / sensor.sensing_range

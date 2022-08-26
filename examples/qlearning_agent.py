@@ -2,12 +2,15 @@ import numpy as np
 
 
 class QLearningAgent:
-    def __init__(self, states_n, actions_n, learning_rate, epsilon, discount_rate):
+    def __init__(self, states_n, actions_n, learning_rate, epsilon, discount_rate, q_matrix=None):
         self.__actions_n = actions_n
         self.__learning_rate = learning_rate
         self.__epsilon = epsilon
         self.__discount_rate = discount_rate
-        self.__q_matrix = np.random.rand(states_n, actions_n)
+        if q_matrix is None:
+            self.__q_matrix = np.random.rand(states_n, actions_n)
+        else:
+            self.__q_matrix = q_matrix
 
     def select_action(self, state=None):
         if state is None:
@@ -28,3 +31,9 @@ class QLearningAgent:
         q_prim = self.__discount_rate * np.max(self.__q_matrix[new_state])
         self.__q_matrix[old_state][action] = current_value + self.__learning_rate * (reward - current_value + q_prim)
 
+    def set_epsilon(self, new_epsilon):
+        assert 0 < new_epsilon <= 1.0
+        self.__epsilon = new_epsilon
+
+    def get_epsilon(self):
+        return self.__epsilon

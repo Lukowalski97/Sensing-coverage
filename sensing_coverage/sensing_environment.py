@@ -197,7 +197,11 @@ class SensingEnvironment:
         return self.__get_covered_to_scalar(self.get_coverage_for_sensor_area(sensor))
 
     def get_covered_area_for_sensor_operational_range(self, sensor):
-        return self.__get_covered_to_scalar(self.get_coverage_for_sensor_operational_range_area(sensor))
+        if sensor.crashed:
+            return 0
+        else:
+            return self.__get_covered_to_scalar(self.get_coverage_for_sensor_operational_range_area(sensor))
+
 
     def get_operational_max_for_sensor(self, sensor):
         return self.__get_covered_to_scalar(self.get_operational_for_sensor_area(sensor))
