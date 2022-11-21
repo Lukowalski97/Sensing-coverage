@@ -1,4 +1,4 @@
-from qlearning_agent import QLearningAgent
+from examples.qlearning_agent import QLearningAgent
 from sensing_coverage.sensing_coverage import SensingCoverageParallel
 from sensing_coverage.sensing_environment import SensingEnvironment
 from sensing_coverage.sensor import Sensor
@@ -6,7 +6,7 @@ from sensing_coverage.sensor import Sensor
 
 def iql():
     how_many_iter_prints = 25
-    iterations = 100000
+    iterations = 10000
 
     max_sens_range = 6
     cov_multiplier = 5
@@ -30,7 +30,7 @@ def iql():
         QLearningAgent(states_amount, actions_amount, q_agent_learn_rate, q_agent_epsilon, q_agent_discount_rate)
         for _ in range(len(sensors_dict))
     ]
-    should_render = False
+    should_render = True
     states = {0: None, 1: None, 2: None, 3: None}
     rewards_to_check = []
     coverages_to_check = []
@@ -76,3 +76,7 @@ def iql():
     print('mean coverages:' + str(sum(coverages_to_check) / len(coverages_to_check)))
     print('mean ranges:' + str(sum(ranges_to_check) / len(ranges_to_check)))
     print('------------------------------------------------------------------------------------------------------')
+
+
+if __name__ == '__main__':
+    iql()

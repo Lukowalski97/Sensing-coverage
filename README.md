@@ -26,20 +26,22 @@ itself.
 ```python
 # from sensing_coverage import Sensor
 sensor0 = Sensor(id=0, x=4, y=5)
-sensor1 = Sensor(id=1, x=0, y=0, sensing_range=4, max_sensing_range=10, operational_range=4,sens_frequency=20, sens_offset=5)
+sensor1 = Sensor(id=1, x=0, y=0, sensing_range=4, max_sensing_range=10, 
+                 operational_range=4,sens_frequency=20, sens_offset=5)
 ```
 
 Then sensors can be passed into **SensingEnvironment**:
 
 ```python
 my_sensors = {0: sensor0, 1: sensor1}
-sensing_env = SensingEnvironment(sensors=my_sensors, width=25, length=30, jitter_time_max=500)
+sensing_env = SensingEnvironment(sensors=my_sensors, width=25, length=30)
 ```
 
 And eventually **SensingCoverageParallel**:
 
 ```python
-sensing_coverage_env = SensingCoverageParallel(env=sensing_env, max_sensing_range=10,max_freq=40, max_offset=40) 
+sensing_coverage_env = SensingCoverageParallel(env=sensing_env, 
+                                               max_sensing_range=10,max_freq=40, max_offset=40) 
 ```
 
 For more info about **SensingEnvironment** and **Sensor** and their parameters see python docs for each class.
@@ -51,9 +53,7 @@ by given difference. It returns 4 dictionaries: observations, rewards, dones, an
 * Observations consist of:
   * global information:
     * part of covered area (0-1.0)
-    * sum of all frequencies, 
-    * jitter which is calculated as standard deviation from average gaps between frequencies which could occur if we
-  made up to *jitter_time_max* time units of measurements for each sensor combined
+    * sum of all frequencies,
   * For each sensor also local observations are returned:
     * part of covered area by sensor itself (0-1.0)
     * part of area covered by other sensors within *operational_range*
