@@ -25,7 +25,7 @@ def on_message(client, userdata, message):
 
 # This version communicates with IotSimOsmosis simulator via mqtt
 def iql():
-    env_alphas = [0.6, ]
+    env_alphas = [0.6]
 
     mqtt_client.on_message = on_message
     mqtt_client.connect('127.0.0.1')
@@ -34,7 +34,7 @@ def iql():
 
     for env_alpha in env_alphas:
         plot_window_size = 1000
-        iterations = 20000
+        iterations = 30000
         epsilon_decay_iterations = 10000
 
         decaying_epsilon_mode = True
@@ -134,7 +134,7 @@ def iql():
                 logged = False
                 while awaiting:
                     if not logged:
-                        # print(f'AWAITING FOR MSG FROM MQTT after {it} iterations')
+                        print(f'AWAITING FOR MSG FROM MQTT after {it} iterations')
                         logged = True
                     global waiting_for_message, last_message
                     if not waiting_for_message:
